@@ -67,12 +67,19 @@
     border: 2px dashed #aaa;
     border-radius: 8px;
     background: #fff;
+    opacity: 0.3; /* mặc định bị khóa */
+  }
+
+  .slot.active {
+    opacity: 1;
+    border-color: #3498db;
   }
 
   .slot.filled {
     background: #2ecc71;
     color: white;
     border: 2px solid #27ae60;
+    opacity: 1;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -111,8 +118,8 @@
     <div class="piece" draggable="true" data-type="IO">💾 I/O</div>
   </div>
 
-  <!-- Board: chỉ là đường đi -->
-  <div class="board">
+  <!-- Board -->
+  <div class="board" id="board">
     <div class="slot"></div>
     <div class="slot"></div>
     <div class="slot"></div>
@@ -140,40 +147,48 @@
 
   const slots = document.querySelectorAll(".slot");
 
+  // chỉ mở slot đầu tiên
+  slots[0].classList.add("active");
+
   document.querySelectorAll(".piece").forEach(piece => {
     piece.addEventListener("dragstart", () => {
       dragged = piece;
     });
   });
 
-  slots.forEach(slot => {
-    slot.addEventListener("dragover", e => e.preventDefault());
+  slots.forEach((slot, index) => {
+    slot.addEventListener("dragover", e => {
+      if (index === currentStep) e.preventDefault();
+    });
 
     slot.addEventListener("drop", e => {
       e.preventDefault();
 
+      if (index !== currentStep) return;
       if (!dragged) return;
-      if (slot.classList.contains("filled")) return;
-      if (slot !== slots[currentStep]) return;
 
-      const type = dragged.dataset.type;
       const expected = correctOrder[currentStep];
+      const actual = dragged.dataset.type;
 
-      if (type === expected) {
+      if (actual === expected) {
         slot.textContent = dragged.textContent;
         slot.classList.add("filled");
+        slot.classList.remove("active");
+
         dragged.style.display = "none";
         dragged = null;
 
         currentStep++;
         updateProgress();
 
-        if (currentStep === correctOrder.length) {
+        if (currentStep < slots.length) {
+          slots[currentStep].classList.add("active");
+        } else {
           document.getElementById("message").textContent =
             "🎉 THÀNH CÔNG! Tín hiệu đã đến được phần cứng!";
         }
       } else {
-        alert("❌ Sai thứ tự! Tín hiệu không thể đi theo hướng này.");
+        alert("❌ Sai thứ tự! Tín hiệu không thể đi đường này.");
       }
     });
   });
@@ -186,4 +201,3 @@
 
 </body>
 </html>
-
