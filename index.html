@@ -1,76 +1,110 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8" />
-  <title>Đưa tín hiệu đến đích</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f4f6f8;
-      text-align: center;
-    }
+<meta charset="UTF-8" />
+<title>Đưa tín hiệu đến đích</title>
 
-    h1 {
-      margin-top: 20px;
-    }
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: #f4f6f8;
+    text-align: center;
+    padding: 20px;
+  }
 
-    .game {
-      display: flex;
-      justify-content: center;
-      margin-top: 30px;
-      gap: 40px;
-    }
+  h1 {
+    margin-bottom: 5px;
+  }
 
-    /* Các mảnh ghép */
-    .pieces {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
+  .subtitle {
+    margin-bottom: 20px;
+    color: #555;
+  }
 
-    .piece {
-      padding: 10px 15px;
-      background: #3498db;
-      color: white;
-      border-radius: 8px;
-      cursor: grab;
-      user-select: none;
-    }
+  /* Thanh tiến độ */
+  .progress-container {
+    width: 60%;
+    height: 20px;
+    background: #ddd;
+    border-radius: 10px;
+    margin: 20px auto;
+    overflow: hidden;
+  }
 
-    /* Bảng đích */
-    .board {
-      display: flex;
-      gap: 15px;
-    }
+  .progress-bar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #3498db, #2ecc71);
+    transition: width 0.4s ease;
+  }
 
-    .slot {
-      width: 120px;
-      height: 50px;
-      border: 2px dashed #aaa;
-      border-radius: 8px;
-      line-height: 50px;
-      font-weight: bold;
-      background: white;
-    }
+  .game {
+    display: flex;
+    justify-content: center;
+    gap: 50px;
+    margin-top: 30px;
+  }
 
-    .filled {
-      background: #2ecc71;
-      color: white;
-      border: 2px solid #27ae60;
-    }
+  /* Mảnh ghép */
+  .pieces {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
 
-    #message {
-      margin-top: 30px;
-      font-size: 20px;
-      font-weight: bold;
-      color: green;
-    }
-  </style>
+  .piece {
+    padding: 10px 15px;
+    background: #3498db;
+    color: white;
+    border-radius: 8px;
+    cursor: grab;
+    user-select: none;
+  }
+
+  /* Board */
+  .board {
+    display: flex;
+    gap: 15px;
+  }
+
+  .slot {
+    width: 120px;
+    height: 50px;
+    border: 2px dashed #aaa;
+    border-radius: 8px;
+    background: #fff;
+  }
+
+  .slot.filled {
+    background: #2ecc71;
+    color: white;
+    border: 2px solid #27ae60;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+  }
+
+  #message {
+    margin-top: 25px;
+    font-size: 20px;
+    font-weight: bold;
+    color: green;
+  }
+</style>
 </head>
+
 <body>
 
 <h1>🎮 ĐƯA TÍN HIỆU ĐẾN ĐÍCH</h1>
-<p>Kéo các thành phần vào đúng thứ tự để chương trình đến được phần cứng</p>
+<div class="subtitle">
+  Kéo các thành phần đúng thứ tự để tín hiệu đến được phần cứng
+</div>
+
+<!-- Thanh tiến độ -->
+<div class="progress-container">
+  <div class="progress-bar" id="progressBar"></div>
+</div>
 
 <div class="game">
 
@@ -84,14 +118,14 @@
     <div class="piece" draggable="true" data-type="IO">💾 I/O</div>
   </div>
 
-  <!-- Bảng đích -->
-  <div class="board">
-    <div class="slot" data-accept="User">User</div>
-    <div class="slot" data-accept="Application">Application</div>
-    <div class="slot" data-accept="API">API</div>
-    <div class="slot" data-accept="OS">OS</div>
-    <div class="slot" data-accept="CPU">CPU</div>
-    <div class="slot" data-accept="IO">I/O</div>
+  <!-- Board (ô trống – KHÔNG HIỆN ĐÁP ÁN) -->
+  <div class="board" id="board">
+    <div class="slot" data-accept="User"></div>
+    <div class="slot" data-accept="Application"></div>
+    <div class="slot" data-accept="API"></div>
+    <div class="slot" data-accept="OS"></div>
+    <div class="slot" data-accept="CPU"></div>
+    <div class="slot" data-accept="IO"></div>
   </div>
 
 </div>
@@ -100,45 +134,58 @@
 
 <script>
   let dragged = null;
+  const totalSteps = 6;
+  let completed = 0;
 
-  document.querySelectorAll('.piece').forEach(piece => {
-    piece.addEventListener('dragstart', e => {
+  /* Random thứ tự slot */
+  const board = document.getElementById("board");
+  [...board.children]
+    .sort(() => Math.random() - 0.5)
+    .forEach(slot => board.appendChild(slot));
+
+  /* Drag */
+  document.querySelectorAll(".piece").forEach(piece => {
+    piece.addEventListener("dragstart", () => {
       dragged = piece;
     });
   });
 
-  document.querySelectorAll('.slot').forEach(slot => {
-    slot.addEventListener('dragover', e => {
-      e.preventDefault();
-    });
+  document.querySelectorAll(".slot").forEach(slot => {
+    slot.addEventListener("dragover", e => e.preventDefault());
 
-    slot.addEventListener('drop', e => {
+    slot.addEventListener("drop", e => {
       e.preventDefault();
 
-      if (slot.classList.contains('filled')) return;
+      if (!dragged || slot.classList.contains("filled")) return;
 
       const accept = slot.dataset.accept;
       const type = dragged.dataset.type;
 
       if (accept === type) {
         slot.textContent = dragged.textContent;
-        slot.classList.add('filled');
+        slot.classList.add("filled");
         dragged.style.display = "none";
-        checkWin();
+        dragged = null;
+
+        completed++;
+        updateProgress();
+
+        if (completed === totalSteps) {
+          document.getElementById("message").textContent =
+            "🎉 THÀNH CÔNG! Tín hiệu đã đến được phần cứng!";
+        }
       } else {
         alert("❌ Sai thứ tự! Thành phần này không lắp được vào đây.");
       }
     });
   });
 
-  function checkWin() {
-    const filled = document.querySelectorAll('.filled').length;
-    if (filled === 6) {
-      document.getElementById('message').textContent =
-        "🎉 THÀNH CÔNG! Chương trình đã đến được phần cứng an toàn!";
-    }
+  function updateProgress() {
+    const percent = (completed / totalSteps) * 100;
+    document.getElementById("progressBar").style.width = percent + "%";
   }
 </script>
 
 </body>
 </html>
+
