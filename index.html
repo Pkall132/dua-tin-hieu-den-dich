@@ -12,16 +12,10 @@
     padding: 20px;
   }
 
-  h1 {
-    margin-bottom: 5px;
-  }
+  h1 { margin-bottom: 5px; }
+  .subtitle { color: #555; margin-bottom: 20px; }
 
-  .subtitle {
-    margin-bottom: 20px;
-    color: #555;
-  }
-
-  /* Thanh tiến độ */
+  /* Progress */
   .progress-container {
     width: 60%;
     height: 20px;
@@ -35,7 +29,7 @@
     height: 100%;
     width: 0%;
     background: linear-gradient(90deg, #3498db, #2ecc71);
-    transition: width 0.4s ease;
+    transition: width 0.3s ease;
   }
 
   .game {
@@ -45,7 +39,7 @@
     margin-top: 30px;
   }
 
-  /* Mảnh ghép */
+  /* Pieces */
   .pieces {
     display: flex;
     flex-direction: column;
@@ -98,17 +92,16 @@
 
 <h1>🎮 ĐƯA TÍN HIỆU ĐẾN ĐÍCH</h1>
 <div class="subtitle">
-  Kéo các thành phần đúng thứ tự để tín hiệu đến được phần cứng
+  Kéo các thành phần ĐÚNG THỨ TỰ để tín hiệu đến phần cứng
 </div>
 
-<!-- Thanh tiến độ -->
 <div class="progress-container">
   <div class="progress-bar" id="progressBar"></div>
 </div>
 
 <div class="game">
 
-  <!-- Mảnh ghép -->
+  <!-- Pieces -->
   <div class="pieces">
     <div class="piece" draggable="true" data-type="User">👤 User</div>
     <div class="piece" draggable="true" data-type="Application">📦 Application</div>
@@ -118,14 +111,14 @@
     <div class="piece" draggable="true" data-type="IO">💾 I/O</div>
   </div>
 
-  <!-- Board (ô trống – KHÔNG HIỆN ĐÁP ÁN) -->
-  <div class="board" id="board">
-    <div class="slot" data-accept="User"></div>
-    <div class="slot" data-accept="Application"></div>
-    <div class="slot" data-accept="API"></div>
-    <div class="slot" data-accept="OS"></div>
-    <div class="slot" data-accept="CPU"></div>
-    <div class="slot" data-accept="IO"></div>
+  <!-- Board: chỉ là đường đi -->
+  <div class="board">
+    <div class="slot"></div>
+    <div class="slot"></div>
+    <div class="slot"></div>
+    <div class="slot"></div>
+    <div class="slot"></div>
+    <div class="slot"></div>
   </div>
 
 </div>
@@ -133,55 +126,60 @@
 <div id="message"></div>
 
 <script>
+  const correctOrder = [
+    "User",
+    "Application",
+    "API",
+    "OS",
+    "CPU",
+    "IO"
+  ];
+
+  let currentStep = 0;
   let dragged = null;
-  const totalSteps = 6;
-  let completed = 0;
 
-  /* Random thứ tự slot */
-  const board = document.getElementById("board");
-  [...board.children]
-    .sort(() => Math.random() - 0.5)
-    .forEach(slot => board.appendChild(slot));
+  const slots = document.querySelectorAll(".slot");
 
-  /* Drag */
   document.querySelectorAll(".piece").forEach(piece => {
     piece.addEventListener("dragstart", () => {
       dragged = piece;
     });
   });
 
-  document.querySelectorAll(".slot").forEach(slot => {
+  slots.forEach(slot => {
     slot.addEventListener("dragover", e => e.preventDefault());
 
     slot.addEventListener("drop", e => {
       e.preventDefault();
 
-      if (!dragged || slot.classList.contains("filled")) return;
+      if (!dragged) return;
+      if (slot.classList.contains("filled")) return;
+      if (slot !== slots[currentStep]) return;
 
-      const accept = slot.dataset.accept;
       const type = dragged.dataset.type;
+      const expected = correctOrder[currentStep];
 
-      if (accept === type) {
+      if (type === expected) {
         slot.textContent = dragged.textContent;
         slot.classList.add("filled");
         dragged.style.display = "none";
         dragged = null;
 
-        completed++;
+        currentStep++;
         updateProgress();
 
-        if (completed === totalSteps) {
+        if (currentStep === correctOrder.length) {
           document.getElementById("message").textContent =
             "🎉 THÀNH CÔNG! Tín hiệu đã đến được phần cứng!";
         }
       } else {
-        alert("❌ Sai thứ tự! Thành phần này không lắp được vào đây.");
+        alert("❌ Sai thứ tự! Tín hiệu không thể đi theo hướng này.");
       }
     });
   });
 
   function updateProgress() {
-    const percent = (completed / totalSteps) * 100;
+    const percent = (currentStep / correctOrder.length) * 100;
     document.getElementById("progressBar").style.width = percent + "%";
   }
 </script>
